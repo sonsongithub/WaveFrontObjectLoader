@@ -24,6 +24,10 @@
 		142E4DDE131C0F59009C5F03 /* OpenGLWaveFrontObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 142E4DD6131C0F59009C5F03 /* OpenGLWaveFrontObject.m */; };
 		142E4DEB131C1067009C5F03 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 142E4DEA131C1067009C5F03 /* OpenGLES.framework */; };
 		142E4DED131C106E009C5F03 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 142E4DEC131C106E009C5F03 /* QuartzCore.framework */; };
+		144BBCDC131CD99400E4A5D6 /* earth_.mtl in Resources */ = {isa = PBXBuildFile; fileRef = 144BBCD9131CD99400E4A5D6 /* earth_.mtl */; };
+		144BBCDD131CD99400E4A5D6 /* earth_.obj in Resources */ = {isa = PBXBuildFile; fileRef = 144BBCDA131CD99400E4A5D6 /* earth_.obj */; };
+		144BBCDE131CD99400E4A5D6 /* sphere_-256.pvr4 in Resources */ = {isa = PBXBuildFile; fileRef = 144BBCDB131CD99400E4A5D6 /* sphere_-256.pvr4 */; };
+		145806DF131CAF8500A1D41B /* NSString+LastPathComponent.m in Sources */ = {isa = PBXBuildFile; fileRef = 145806DE131CAF8500A1D41B /* NSString+LastPathComponent.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,7 +48,7 @@
 		142E4DC8131C0F59009C5F03 /* GLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLView.h; sourceTree = "<group>"; };
 		142E4DC9131C0F59009C5F03 /* GLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GLView.m; sourceTree = "<group>"; };
 		142E4DCA131C0F59009C5F03 /* MyGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLView.h; sourceTree = "<group>"; };
-		142E4DCB131C0F59009C5F03 /* MyGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyGLView.m; sourceTree = "<group>"; };
+		142E4DCB131C0F59009C5F03 /* MyGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyGLView.m; sourceTree = "<group>"; usesTabs = 1; };
 		142E4DCD131C0F59009C5F03 /* ConstantsAndMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConstantsAndMacros.h; sourceTree = "<group>"; };
 		142E4DCE131C0F59009C5F03 /* OpenGLTexture3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGLTexture3D.h; sourceTree = "<group>"; };
 		142E4DCF131C0F59009C5F03 /* OpenGLTexture3D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenGLTexture3D.m; sourceTree = "<group>"; };
@@ -54,9 +58,14 @@
 		142E4DD3131C0F59009C5F03 /* OpenGLWaveFrontMaterial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGLWaveFrontMaterial.h; sourceTree = "<group>"; };
 		142E4DD4131C0F59009C5F03 /* OpenGLWaveFrontMaterial.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenGLWaveFrontMaterial.m; sourceTree = "<group>"; };
 		142E4DD5131C0F59009C5F03 /* OpenGLWaveFrontObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGLWaveFrontObject.h; sourceTree = "<group>"; };
-		142E4DD6131C0F59009C5F03 /* OpenGLWaveFrontObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenGLWaveFrontObject.m; sourceTree = "<group>"; };
+		142E4DD6131C0F59009C5F03 /* OpenGLWaveFrontObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenGLWaveFrontObject.m; sourceTree = "<group>"; usesTabs = 1; };
 		142E4DEA131C1067009C5F03 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		142E4DEC131C106E009C5F03 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		144BBCD9131CD99400E4A5D6 /* earth_.mtl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = earth_.mtl; sourceTree = "<group>"; };
+		144BBCDA131CD99400E4A5D6 /* earth_.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = earth_.obj; sourceTree = "<group>"; };
+		144BBCDB131CD99400E4A5D6 /* sphere_-256.pvr4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "sphere_-256.pvr4"; sourceTree = "<group>"; };
+		145806DD131CAF8500A1D41B /* NSString+LastPathComponent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+LastPathComponent.h"; sourceTree = "<group>"; };
+		145806DE131CAF8500A1D41B /* NSString+LastPathComponent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+LastPathComponent.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,8 +87,8 @@
 		142E4D90131C0EBF009C5F03 = {
 			isa = PBXGroup;
 			children = (
-				142E4DEC131C106E009C5F03 /* QuartzCore.framework */,
-				142E4DEA131C1067009C5F03 /* OpenGLES.framework */,
+				145806DC131CAF8500A1D41B /* Tool */,
+				145806B7131C8E9C00A1D41B /* Models */,
 				142E4DC7131C0F59009C5F03 /* GL */,
 				142E4DCC131C0F59009C5F03 /* WaveFrontObject */,
 				142E4DA5131C0EBF009C5F03 /* Loader */,
@@ -99,6 +108,8 @@
 		142E4D9E131C0EBF009C5F03 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				142E4DEC131C106E009C5F03 /* QuartzCore.framework */,
+				142E4DEA131C1067009C5F03 /* OpenGLES.framework */,
 				142E4D9F131C0EBF009C5F03 /* UIKit.framework */,
 				142E4DA1131C0EBF009C5F03 /* Foundation.framework */,
 				142E4DA3131C0EBF009C5F03 /* CoreGraphics.framework */,
@@ -161,6 +172,26 @@
 			path = Loader/WaveFrontObject;
 			sourceTree = "<group>";
 		};
+		145806B7131C8E9C00A1D41B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				144BBCD9131CD99400E4A5D6 /* earth_.mtl */,
+				144BBCDA131CD99400E4A5D6 /* earth_.obj */,
+				144BBCDB131CD99400E4A5D6 /* sphere_-256.pvr4 */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		145806DC131CAF8500A1D41B /* Tool */ = {
+			isa = PBXGroup;
+			children = (
+				145806DD131CAF8500A1D41B /* NSString+LastPathComponent.h */,
+				145806DE131CAF8500A1D41B /* NSString+LastPathComponent.m */,
+			);
+			name = Tool;
+			path = Loader/Tool;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -211,6 +242,9 @@
 				142E4DAA131C0EBF009C5F03 /* InfoPlist.strings in Resources */,
 				142E4DB3131C0EBF009C5F03 /* MainWindow.xib in Resources */,
 				142E4DB9131C0EBF009C5F03 /* LoaderViewController.xib in Resources */,
+				144BBCDC131CD99400E4A5D6 /* earth_.mtl in Resources */,
+				144BBCDD131CD99400E4A5D6 /* earth_.obj in Resources */,
+				144BBCDE131CD99400E4A5D6 /* sphere_-256.pvr4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,6 +264,7 @@
 				142E4DDC131C0F59009C5F03 /* OpenGLWaveFrontGroup.m in Sources */,
 				142E4DDD131C0F59009C5F03 /* OpenGLWaveFrontMaterial.m in Sources */,
 				142E4DDE131C0F59009C5F03 /* OpenGLWaveFrontObject.m in Sources */,
+				145806DF131CAF8500A1D41B /* NSString+LastPathComponent.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

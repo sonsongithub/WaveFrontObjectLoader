@@ -21,6 +21,9 @@
 @interface OpenGLWaveFrontObject : NSObject {
 	NSString			*sourceObjFilePath;
 	NSString			*sourceMtlFilePath;
+
+    NSString            *sourceRootFolderPath;
+    NSString            *sourceObjFileName;
 	
 	GLuint				numberOfVertices;
 	Vertex3D			*vertices;	
@@ -45,5 +48,7 @@
 @property Vertex3D currentPosition;
 @property Rotation3D currentRotation;
 - (id)initWithPath:(NSString *)path;
++ (id)objectNamed:(NSString *)name;
+- (id)initWithContentsOfFile:(NSString *)path;
 - (void)drawSelf;
 @end

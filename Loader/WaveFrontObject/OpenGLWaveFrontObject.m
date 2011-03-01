@@ -15,6 +15,7 @@
 #import "OpenGLWaveFrontGroup.h"
 #import "OpenGLWaveFrontMaterial.h"
 #import "OpenGLTexture3D.h"
+#import "NSString+LastPathComponent.h"
 
 static inline void	processOneVertex(VertexTextureIndex *rootNode, GLuint vertexIndex, GLuint vertexTextureIndex, GLuint *vertexCount, Vertex3D	*vertices, GLfloat  *allTextureCoords, GLfloat *textureCoords, GLuint componentsPerTextureCoord, GLushort *faceVertexIndex)
 {
@@ -59,202 +60,238 @@ static inline void	processOneVertex(VertexTextureIndex *rootNode, GLuint vertexI
 @synthesize currentRotation;
 @synthesize materials;
 @synthesize groups;
+
++ (id)objectNamed:(NSString *)name {
+    NSString *path = [[NSBundle mainBundle] pathForResource:name ofType:nil];
+    OpenGLWaveFrontObject *obj = [[OpenGLWaveFrontObject alloc] initWithPath:path];
+    return [obj autorelease];
+}
+
+- (void)setupWithPath:(NSString*)path {
+    
+    self.groups = [NSMutableArray array];
+    
+    self.sourceObjFilePath = path;
+	sourceObjFileName = [[path stringByDeletingLastPathComponent] retain];
+    
+    NSError *error = nil;
+    NSString *objData = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+    
+    NSUInteger vertexCount = 0, faceCount = 0, textureCoordsCount=0, groupCount = 0;
+    // Iterate through file once to discover how many vertices, normals, and faces there are
+    NSArray *lines = [objData componentsSeparatedByString:@"\n"];
+    BOOL firstTextureCoords = YES;
+    NSMutableArray *vertexCombinations = [[NSMutableArray alloc] init];
+    for (NSString * line in lines)
+    {
+        if ([line hasPrefix:@"v "])
+            vertexCount++;
+        else if ([line hasPrefix:@"vt "])
+        {
+            textureCoordsCount++;
+            if (firstTextureCoords)
+            {
+                firstTextureCoords = NO;
+                NSString *texLine = [line substringFromIndex:3];
+                NSArray *texParts = [texLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                valuesPerCoord = [texParts count];
+            }
+        }
+        else if ([line hasPrefix:@"m"])
+        {
+            NSString *truncLine = [line substringFromIndex:7];
+            self.sourceMtlFilePath = truncLine;
+            
+            BOOL isDirectory = NO;
+            BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:sourceRootFolderPath isDirectory:&isDirectory];
+
+            if (isDirectory && fileExists) {
+				NSString *mtlPath = [sourceRootFolderPath stringByAppendingPathComponent:truncLine];
+                self.materials = [OpenGLWaveFrontMaterial materialsFromMtlFile:mtlPath];
+            }
+            else {
+                NSString *mtlPath = [[NSBundle mainBundle] pathForResource:[[truncLine lastPathComponent] stringByDeletingPathExtension] ofType:[truncLine pathExtension]];
+                self.materials = [OpenGLWaveFrontMaterial materialsFromMtlFile:mtlPath];
+            }
+            
+        }
+        else if ([line hasPrefix:@"g"])
+            groupCount++;
+        else if ([line hasPrefix:@"f"])
+        {
+            faceCount++;
+            NSString *faceLine = [line substringFromIndex:2];
+            NSArray *faces = [faceLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            for (NSString *oneFace in faces)
+            {
+                NSArray *faceParts = [oneFace componentsSeparatedByString:@"/"];
+                
+                NSString *faceKey = [NSString stringWithFormat:@"%@/%@", [faceParts objectAtIndex:0], ([faceParts count] > 1) ? [faceParts objectAtIndex:1] : 0];
+                if (![vertexCombinations containsObject:faceKey])
+                    [vertexCombinations addObject:faceKey];
+            }
+        }
+        
+    }
+    vertices = malloc(sizeof(Vertex3D) *  [vertexCombinations count]);
+    GLfloat *allTextureCoords = malloc(sizeof(GLfloat) *  textureCoordsCount * valuesPerCoord);
+    textureCoords = (textureCoordsCount > 0) ?  malloc(sizeof(GLfloat) * valuesPerCoord * [vertexCombinations count]) : NULL;
+    // Store the counts
+    numberOfFaces = faceCount;
+    numberOfVertices = [vertexCombinations count];
+    GLuint allTextureCoordsCount = 0;
+    textureCoordsCount = 0;
+    GLuint groupFaceCount = 0;
+    GLuint groupCoordCount = 0;
+    // Reuse our count variables for second time through
+    vertexCount = 0;
+    faceCount = 0;
+    OpenGLWaveFrontGroup *currentGroup = nil;
+    NSUInteger lineNum = 0;
+    BOOL usingGroups = YES;
+    
+    VertexTextureIndex *rootNode = nil;
+    for (NSString * line in lines)
+    {
+        if ([line hasPrefix:@"v "])
+        {
+            NSString *lineTrunc = [line substringFromIndex:2];
+            NSArray *lineVertices = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            vertices[vertexCount].x = [[lineVertices objectAtIndex:0] floatValue];
+            vertices[vertexCount].y = [[lineVertices objectAtIndex:1] floatValue];
+            vertices[vertexCount].z = [[lineVertices objectAtIndex:2] floatValue];
+            // Ignore weight if it exists..
+            vertexCount++;
+        }
+        else if ([line hasPrefix: @"vt "])
+        {
+            NSString *lineTrunc = [line substringFromIndex:3];
+            NSArray *lineCoords = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            //int coordCount = 1;
+            for (NSString *oneCoord in lineCoords)
+            {
+                //					if (valuesPerCoord == 2 /* using UV Mapping */ && coordCount++ == 1 /* is U value */)
+                //						allTextureCoords[allTextureCoordsCount] = CONVERT_UV_U_TO_ST_S([oneCoord floatValue]);
+                //					else
+                allTextureCoords[allTextureCoordsCount] = [oneCoord floatValue];
+                //NSLog(@"Setting allTextureCoords[%d] to %f", allTextureCoordsCount, [oneCoord floatValue]);
+                allTextureCoordsCount++;
+            }
+            
+            // Ignore weight if it exists..
+            textureCoordsCount++;
+        }
+        else if ([line hasPrefix:@"g "])
+        {
+            NSString *groupName = [line substringFromIndex:2];
+            NSUInteger counter = lineNum+1;
+            NSUInteger currentGroupFaceCount = 0;
+            NSString *materialName = nil;
+            while (counter < [lines count])
+            {
+                NSString *nextLine = [lines objectAtIndex:counter++];
+                if ([nextLine hasPrefix:@"usemtl "])
+                    materialName = [nextLine substringFromIndex:7];
+                else if ([nextLine hasPrefix:@"f "])
+                {
+                    // TODO: Loook for quads and double-increment
+                    currentGroupFaceCount ++;
+                }
+                else if ([nextLine hasPrefix:@"g "])
+                    break;
+            }
+            
+            OpenGLWaveFrontMaterial *material = [materials objectForKey:materialName] ;
+            if (material == nil)
+                material = [OpenGLWaveFrontMaterial defaultMaterial];
+            
+            currentGroup = [[OpenGLWaveFrontGroup alloc] initWithName:groupName
+                                                        numberOfFaces:currentGroupFaceCount 
+                                                             material:material];
+            [groups addObject:currentGroup];
+            [currentGroup release];
+            groupFaceCount = 0;
+            groupCoordCount = 0;
+        }
+        else if ([line hasPrefix:@"usemtl "])
+        {
+            NSString *materialKey = [line substringFromIndex:7];
+            currentGroup.material = [materials objectForKey:materialKey];
+        }
+        else if ([line hasPrefix:@"f "])
+        {
+            NSString *lineTrunc = [line substringFromIndex:2];
+            NSArray *faceIndexGroups = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            
+            // If no groups in file, create one group that has all the vertices and uses the default material
+            if (currentGroup == nil)
+            {
+                OpenGLWaveFrontMaterial *tempMaterial = nil;
+                NSArray *materialKeys = [materials allKeys];
+                if ([materialKeys count] == 2)
+                {
+                    // 2 means there's one in file, plus default
+                    for (NSString *key in materialKeys)
+                        if (![key isEqualToString:@"default"])
+                            tempMaterial = [materials objectForKey:key];
+                }
+                if (tempMaterial == nil)
+                    tempMaterial = [OpenGLWaveFrontMaterial defaultMaterial];
+                
+                currentGroup = [[OpenGLWaveFrontGroup alloc] initWithName:@"default"
+                                                            numberOfFaces:numberOfFaces 
+                                                                 material:tempMaterial];
+                [groups addObject:currentGroup];
+                [currentGroup release];
+                usingGroups = NO;
+            }
+            
+            // TODO: Look for quads and build two triangles
+            
+            NSArray *vertex1Parts = [[faceIndexGroups objectAtIndex:0] componentsSeparatedByString:@"/"];
+            GLuint vertex1Index = [[vertex1Parts objectAtIndex:kGroupIndexVertex] intValue]-1;
+            GLuint vertex1TextureIndex = 0;
+            if ([vertex1Parts count] > 1)
+                vertex1TextureIndex = [[vertex1Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1;
+            if (rootNode == NULL)
+                rootNode =  VertexTextureIndexMake(vertex1Index, vertex1TextureIndex, UINT_MAX);
+            
+            processOneVertex(rootNode, vertex1Index, vertex1TextureIndex, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &(currentGroup.faces[groupFaceCount].v1));
+            NSArray *vertex2Parts = [[faceIndexGroups objectAtIndex:1] componentsSeparatedByString:@"/"];
+            processOneVertex(rootNode, [[vertex2Parts objectAtIndex:kGroupIndexVertex] intValue]-1, [vertex2Parts count] > 1 ? [[vertex2Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1 : 0, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &currentGroup.faces[groupFaceCount].v2);	
+            NSArray *vertex3Parts = [[faceIndexGroups objectAtIndex:2] componentsSeparatedByString:@"/"];
+            processOneVertex(rootNode, [[vertex3Parts objectAtIndex:kGroupIndexVertex] intValue]-1, [vertex3Parts count] > 1 ? [[vertex3Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1 : 0, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &currentGroup.faces[groupFaceCount].v3);
+            
+            faceCount++;
+            groupFaceCount++;
+        }
+        lineNum++;
+        
+    }
+    //NSLog(@"Final vertex count: %d", vertexCount);
+    
+    [self calculateNormals];
+    if (allTextureCoords)
+        free(allTextureCoords);
+    [vertexCombinations release];
+    VertexTextureIndexFree(rootNode);
+}
+
+- (id)initWithContentsOfFile:(NSString *)path {
+	if ((self = [super init]))
+	{
+        sourceRootFolderPath = [[path stringByDeletingLastPathComponent] retain];
+        [self setupWithPath:path];
+	}
+	return self;
+}
+
 - (id)initWithPath:(NSString *)path
 {
 	
 	if ((self = [super init]))
 	{
-		self.groups = [NSMutableArray array];
-		
-		self.sourceObjFilePath = path;
-		NSString *objData = [NSString stringWithContentsOfFile:path];
-		NSUInteger vertexCount = 0, faceCount = 0, textureCoordsCount=0, groupCount = 0;
-		// Iterate through file once to discover how many vertices, normals, and faces there are
-		NSArray *lines = [objData componentsSeparatedByString:@"\n"];
-		BOOL firstTextureCoords = YES;
-		NSMutableArray *vertexCombinations = [[NSMutableArray alloc] init];
-		for (NSString * line in lines)
-		{
-			if ([line hasPrefix:@"v "])
-				vertexCount++;
-			else if ([line hasPrefix:@"vt "])
-			{
-				textureCoordsCount++;
-				if (firstTextureCoords)
-				{
-					firstTextureCoords = NO;
-					NSString *texLine = [line substringFromIndex:3];
-					NSArray *texParts = [texLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-					valuesPerCoord = [texParts count];
-				}
-			}
-			else if ([line hasPrefix:@"m"])
-			{
-				NSString *truncLine = [line substringFromIndex:7];
-				self.sourceMtlFilePath = truncLine;
-				NSString *mtlPath = [[NSBundle mainBundle] pathForResource:[[truncLine lastPathComponent] stringByDeletingPathExtension] ofType:[truncLine pathExtension]];
-				self.materials = [OpenGLWaveFrontMaterial materialsFromMtlFile:mtlPath];
-			}
-			else if ([line hasPrefix:@"g"])
-				groupCount++;
-			else if ([line hasPrefix:@"f"])
-			{
-				faceCount++;
-				NSString *faceLine = [line substringFromIndex:2];
-				NSArray *faces = [faceLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-				for (NSString *oneFace in faces)
-				{
-					NSArray *faceParts = [oneFace componentsSeparatedByString:@"/"];
-					
-					NSString *faceKey = [NSString stringWithFormat:@"%@/%@", [faceParts objectAtIndex:0], ([faceParts count] > 1) ? [faceParts objectAtIndex:1] : 0];
-					if (![vertexCombinations containsObject:faceKey])
-						[vertexCombinations addObject:faceKey];
-				}
-			}
-			
-		}
-		vertices = malloc(sizeof(Vertex3D) *  [vertexCombinations count]);
-		GLfloat *allTextureCoords = malloc(sizeof(GLfloat) *  textureCoordsCount * valuesPerCoord);
-		textureCoords = (textureCoordsCount > 0) ?  malloc(sizeof(GLfloat) * valuesPerCoord * [vertexCombinations count]) : NULL;
-		// Store the counts
-		numberOfFaces = faceCount;
-		numberOfVertices = [vertexCombinations count];
-		GLuint allTextureCoordsCount = 0;
-		textureCoordsCount = 0;
-		GLuint groupFaceCount = 0;
-		GLuint groupCoordCount = 0;
-		// Reuse our count variables for second time through
-		vertexCount = 0;
-		faceCount = 0;
-		OpenGLWaveFrontGroup *currentGroup = nil;
-		NSUInteger lineNum = 0;
-		BOOL usingGroups = YES;
-		
-		VertexTextureIndex *rootNode = nil;
-		for (NSString * line in lines)
-		{
-			if ([line hasPrefix:@"v "])
-			{
-				NSString *lineTrunc = [line substringFromIndex:2];
-				NSArray *lineVertices = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-				vertices[vertexCount].x = [[lineVertices objectAtIndex:0] floatValue];
-				vertices[vertexCount].y = [[lineVertices objectAtIndex:1] floatValue];
-				vertices[vertexCount].z = [[lineVertices objectAtIndex:2] floatValue];
-				// Ignore weight if it exists..
-				vertexCount++;
-			}
-			else if ([line hasPrefix: @"vt "])
-			{
-				NSString *lineTrunc = [line substringFromIndex:3];
-				NSArray *lineCoords = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-				//int coordCount = 1;
-				for (NSString *oneCoord in lineCoords)
-				{
-//					if (valuesPerCoord == 2 /* using UV Mapping */ && coordCount++ == 1 /* is U value */)
-//						allTextureCoords[allTextureCoordsCount] = CONVERT_UV_U_TO_ST_S([oneCoord floatValue]);
-//					else
-						allTextureCoords[allTextureCoordsCount] = [oneCoord floatValue];
-					//NSLog(@"Setting allTextureCoords[%d] to %f", allTextureCoordsCount, [oneCoord floatValue]);
-					allTextureCoordsCount++;
-				}
-				
-				// Ignore weight if it exists..
-				textureCoordsCount++;
-			}
-			else if ([line hasPrefix:@"g "])
-			{
-				NSString *groupName = [line substringFromIndex:2];
-				NSUInteger counter = lineNum+1;
-				NSUInteger currentGroupFaceCount = 0;
-				NSString *materialName = nil;
-				while (counter < [lines count])
-				{
-					NSString *nextLine = [lines objectAtIndex:counter++];
-					if ([nextLine hasPrefix:@"usemtl "])
-						materialName = [nextLine substringFromIndex:7];
-					else if ([nextLine hasPrefix:@"f "])
-					{
-						// TODO: Loook for quads and double-increment
-						currentGroupFaceCount ++;
-					}
-					else if ([nextLine hasPrefix:@"g "])
-						break;
-				}
-				
-				OpenGLWaveFrontMaterial *material = [materials objectForKey:materialName] ;
-				if (material == nil)
-					material = [OpenGLWaveFrontMaterial defaultMaterial];
-				
-				currentGroup = [[OpenGLWaveFrontGroup alloc] initWithName:groupName
-															numberOfFaces:currentGroupFaceCount 
-																 material:material];
-				[groups addObject:currentGroup];
-				[currentGroup release];
-				groupFaceCount = 0;
-				groupCoordCount = 0;
-			}
-			else if ([line hasPrefix:@"usemtl "])
-			{
-				NSString *materialKey = [line substringFromIndex:7];
-				currentGroup.material = [materials objectForKey:materialKey];
-			}
-			else if ([line hasPrefix:@"f "])
-			{
-				NSString *lineTrunc = [line substringFromIndex:2];
-				NSArray *faceIndexGroups = [lineTrunc componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-				
-				// If no groups in file, create one group that has all the vertices and uses the default material
-				if (currentGroup == nil)
-				{
-					OpenGLWaveFrontMaterial *tempMaterial = nil;
-					NSArray *materialKeys = [materials allKeys];
-					if ([materialKeys count] == 2)
-					{
-						// 2 means there's one in file, plus default
-						for (NSString *key in materialKeys)
-							if (![key isEqualToString:@"default"])
-								tempMaterial = [materials objectForKey:key];
-					}
-					if (tempMaterial == nil)
-						tempMaterial = [OpenGLWaveFrontMaterial defaultMaterial];
-					
-					currentGroup = [[OpenGLWaveFrontGroup alloc] initWithName:@"default"
-																numberOfFaces:numberOfFaces 
-																	 material:tempMaterial];
-					[groups addObject:currentGroup];
-					[currentGroup release];
-					usingGroups = NO;
-				}
-				
-				// TODO: Look for quads and build two triangles
-				
-				NSArray *vertex1Parts = [[faceIndexGroups objectAtIndex:0] componentsSeparatedByString:@"/"];
-				GLuint vertex1Index = [[vertex1Parts objectAtIndex:kGroupIndexVertex] intValue]-1;
-				GLuint vertex1TextureIndex = 0;
-				if ([vertex1Parts count] > 1)
-					vertex1TextureIndex = [[vertex1Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1;
-				if (rootNode == NULL)
-					rootNode =  VertexTextureIndexMake(vertex1Index, vertex1TextureIndex, UINT_MAX);
-				
-				processOneVertex(rootNode, vertex1Index, vertex1TextureIndex, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &(currentGroup.faces[groupFaceCount].v1));
-				NSArray *vertex2Parts = [[faceIndexGroups objectAtIndex:1] componentsSeparatedByString:@"/"];
-				processOneVertex(rootNode, [[vertex2Parts objectAtIndex:kGroupIndexVertex] intValue]-1, [vertex2Parts count] > 1 ? [[vertex2Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1 : 0, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &currentGroup.faces[groupFaceCount].v2);	
-				NSArray *vertex3Parts = [[faceIndexGroups objectAtIndex:2] componentsSeparatedByString:@"/"];
-				processOneVertex(rootNode, [[vertex3Parts objectAtIndex:kGroupIndexVertex] intValue]-1, [vertex3Parts count] > 1 ? [[vertex3Parts objectAtIndex:kGroupIndexTextureCoordIndex] intValue]-1 : 0, &vertexCount, vertices, allTextureCoords, textureCoords, valuesPerCoord, &currentGroup.faces[groupFaceCount].v3);
-				
-				faceCount++;
-				groupFaceCount++;
-			}
-			lineNum++;
-			
-		}
-		//NSLog(@"Final vertex count: %d", vertexCount);
-		
-		[self calculateNormals];
-		if (allTextureCoords)
-			free(allTextureCoords);
-		[vertexCombinations release];
-		VertexTextureIndexFree(rootNode);
+        [self setupWithPath:path];
 	}
 	return self;
 }
@@ -262,18 +299,18 @@ static inline void	processOneVertex(VertexTextureIndex *rootNode, GLuint vertexI
 - (void)drawSelf
 {
 	// Save the current transformation by pushing it on the stack
-	glPushMatrix();
+//	glPushMatrix();
 	
 	// Load the identity matrix to restore to origin
-	glLoadIdentity();
+//	glLoadIdentity();
 	
 	// Translate to the current position
-	glTranslatef(currentPosition.x, currentPosition.y, currentPosition.z);
+//	glTranslatef(currentPosition.x, currentPosition.y, currentPosition.z);
 	
 	// Rotate to the current rotation
-	glRotatef(currentRotation.x, 1.0, 0.0, 0.0);
-	glRotatef(currentRotation.y, 0.0, 1.0, 0.0);
-	glRotatef(currentPosition.z, 0.0, 0.0, 1.0);
+//	glRotatef(currentRotation.x, 1.0, 0.0, 0.0);
+//	glRotatef(currentRotation.y, 0.0, 1.0, 0.0);
+//	glRotatef(currentPosition.z, 0.0, 0.0, 1.0);
 	
 	// Enable and load the vertex array
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -312,7 +349,7 @@ static inline void	processOneVertex(VertexTextureIndex *rootNode, GLuint vertexI
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
 	// Restore the current transformation by popping it off
-	glPopMatrix();
+//	glPopMatrix();
 }
 
 - (void)calculateNormals
@@ -372,8 +409,10 @@ static inline void	processOneVertex(VertexTextureIndex *rootNode, GLuint vertexI
 {
 	[materials release];
 	[groups release];
+	[sourceObjFileName release];
 	[sourceObjFilePath release];
 	[sourceMtlFilePath release];
+    [sourceRootFolderPath release];
 	if (vertices)
 		free(vertices);
 	if (surfaceNormals)

@@ -8,6 +8,7 @@
 
 #import "OpenGLWaveFrontMaterial.h"
 #import "OpenGLTexture3D.h"
+#import "NSString+LastPathComponent.h"
 
 @implementation OpenGLWaveFrontMaterial
 @synthesize name;
@@ -26,11 +27,18 @@
 												 specular:Color3DMake(0.0, 0.0, 0.0, 1.0)] autorelease];
 	
 }
+
 + (id)materialsFromMtlFile:(NSString *)path
 {
 	NSMutableDictionary *ret = [NSMutableDictionary dictionary];
 	[ret setObject:[OpenGLWaveFrontMaterial defaultMaterial] forKey:@"default"];
-	NSString *mtlData = [NSString stringWithContentsOfFile:path];
+
+    NSString *rootFolderPath = [path stringByDeletingLastPathComponent];
+    
+    NSError *error = nil;
+    NSString *mtlData = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+	
+//    NSString *mtlData = [NSString stringWithContentsOfFile:path];
 	NSArray *mtlLines = [mtlData componentsSeparatedByString:@"\n"];
 	// Can't use fast enumeration here, need to manipulate line order
 	for (int i = 0; i < [mtlLines count]; i++)
@@ -99,18 +107,24 @@
 					{
 						
 						NSString *newBase = [NSString stringWithFormat:@"%@-%d", baseName, i];
-						NSString *path = [[NSBundle mainBundle] pathForResource:newBase ofType:@"pvr4"];
-						if (path != nil)
+                        NSString *pathBase = [rootFolderPath stringByAppendingPathComponent:newBase];
+                        NSString *path = [pathBase stringByAppendingPathExtension:@"pvr4"];
+//						NSString *path = [[NSBundle mainBundle] pathForResource:newBase ofType:@"pvr4"];
+                        NSLog(@"%@", path);
+						if ([[NSFileManager defaultManager] isReadableFileAtPath:path])
 						{
-							textureFilename = [NSString stringWithFormat:@"%@.pvr4", newBase];
+							textureFilename = path; //[NSString stringWithFormat:@"%@.pvr4", newBase];
 							width = i;
 							height = i;
 							break;
 						}
-						path =  [[NSBundle mainBundle] pathForResource:newBase ofType:@"pvr2"];
-						if (path != nil)
+                        path = [pathBase stringByAppendingPathExtension:@"pvr2"];
+//						path =  [[NSBundle mainBundle] pathForResource:newBase ofType:@"pvr2"];
+                        
+                        NSLog(@"%@", path);
+						if ([[NSFileManager defaultManager] isReadableFileAtPath:path])
 						{
-							textureFilename = [NSString stringWithFormat:@"%@.pvr4", newBase];
+							textureFilename = path; //[NSString stringWithFormat:@"%@.pvr4", newBase];
 							width = i;
 							height = i;
 							break;

@@ -29,9 +29,9 @@
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR); 
 		glBlendFunc(GL_ONE, GL_SRC_COLOR);
 		NSString *extension = [inFilename pathExtension];
-		NSString *base = [[inFilename componentsSeparatedByString:@"."] objectAtIndex:0];
-		NSString *path = [[NSBundle mainBundle] pathForResource:base ofType:extension];
-		NSData *texData = [[NSData alloc] initWithContentsOfFile:path];
+//		NSString *base = [[inFilename componentsSeparatedByString:@"."] objectAtIndex:0];
+//		NSString *path = [[NSBundle mainBundle] pathForResource:base ofType:extension];
+		NSData *texData = [[NSData alloc] initWithContentsOfFile:inFilename];
 		
 		// Assumes pvr4 is RGB not RGBA, which is how texturetool generates them
 		if ([extension isEqualToString:@"pvr4"])

@@ -8,8 +8,12 @@
 
 #import "GLView.h"
 
+#import "OpenGLWaveFrontObject.h"
+
 @interface MyGLView : GLView {
 	float t;
+    OpenGLWaveFrontObject *objNamed;
+    OpenGLWaveFrontObject *obj;
 }
 
 @end
